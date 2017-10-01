@@ -22,7 +22,6 @@
 
 import Foundation
 import CoreLocation
-import AVFoundation
 
 struct ItemConstant {
   static let nameKey = "name"
@@ -88,8 +87,8 @@ class Item: NSObject, NSCoding {
     aCoder.encode(Int(majorValue), forKey: ItemConstant.majorKey)
     aCoder.encode(Int(minorValue), forKey: ItemConstant.minorKey)
     aCoder.encode(beacon, forKey: ItemConstant.beaconKey)
-    aCoder.encode(accuracy, forKey: ItemConstant.accuracyKey)
-    aCoder.encode(proximity, forKey: ItemConstant.proximityKey)
+//    aCoder.encode(accuracy, forKey: ItemConstant.accuracyKey)
+//    aCoder.encode(proximity, forKey: ItemConstant.proximityKey)
   }
   
   func asBeaconRegion() -> CLBeaconRegion {
@@ -122,19 +121,11 @@ class Item: NSObject, NSCoding {
     if beacon.proximity != .unknown {
       location += " (approx. \(accuracy)m)"
     }
+    self.proximity = beacon.proximity
     self.accuracy = beacon.accuracy
     return location
   }
 
-}
-
-
-func speak(_ text: String) {
-  let utterance = AVSpeechUtterance(string: text)
-  utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
-  
-  let synth = AVSpeechSynthesizer()
-  synth.speak(utterance)
 }
 
 func ==(item: Item, beacon: CLBeacon) -> Bool {

@@ -22,6 +22,7 @@
 
 import UIKit
 import CoreLocation
+import AVFoundation
 
 let storedItemsKey = "storedItems"
 
@@ -95,7 +96,6 @@ extension ItemsViewController: AddBeacon {
   }
 }
 
-
 extension ItemsViewController: CLLocationManagerDelegate {
   func locationManager(_ manager: CLLocationManager, monitoringDidFailFor region: CLRegion?, withError error: Error) {
     print("Failed monitoring region: \(error.localizedDescription)")
@@ -116,6 +116,7 @@ extension ItemsViewController: CLLocationManagerDelegate {
           items[row].beacon = beacon
           indexPaths += [IndexPath(row: row, section: 0)]
           processBeacon(items[row], distance: 0.08, frequency: 20, action: provideInfo)
+//          processBeacon(items[row], distance: 0.08, frequency: 20)
         }
       }
     }
@@ -129,27 +130,37 @@ extension ItemsViewController: CLLocationManagerDelegate {
       }
     }
   }
+}
   
   ///////////////////////////////
   // Perform interactions here //
   ///////////////////////////////
-  func processBeacon(_ beacon: Item, distance: Double, frequency: Int, action: (_ beacon: Item) -> ()) {
-    print("processBeacon")
-    if beacon.accuracy < distance {
-      print(beacon.name, ": ", beacon.counter)
-      if beacon.proximity != .unknown && beacon.counter == 0 {
-        //Here
-        action(beacon)
-      }
-      beacon.counter = (beacon.counter + 1) % frequency
-    } else {
-      beacon.counter = 0
+//func processBeacon(_ beacon: Item, distance: Double, frequency: Int) {
+    func processBeacon(_ beacon: Item, distance: Double, frequency: Int, action: (_ beacon: Item) -> ()) {
+  print("processBeacon")
+  if beacon.accuracy < distance {
+    print(beacon.name, ": ", beacon.counter)
+    if beacon.proximity != .unknown && beacon.counter == 0 {
+  //        Here
+      action(beacon)
     }
+    beacon.counter = (beacon.counter + 1) % frequency
+  } else {
+    beacon.counter = 0
   }
-  
-  func provideInfo(_ beacon: Item) {
-    speak("This is " + beacon.name)
-  }
+}
+
+func provideInfo(_ beacon: Item) {
+  speak("This is " + beacon.name)
+}
+
+
+func speak(_ text: String) {
+  let utterance = AVSpeechUtterance(string: text)
+  utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
+
+  let synth = AVSpeechSynthesizer()
+  synth.speak(utterance)
 }
 
 // MARK: UITableViewDataSource

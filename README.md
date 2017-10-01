@@ -40,15 +40,15 @@ We followed Ray Wenderlich's [iBeacon Tutorial with iOS and Swift](https://www.r
 
 To add new interactions, call processBeacon with the beacon you want to associate the action with, the maximum distance for the trigger range, the frequency you want the action to be repeated once the target is inside the trigger range, and the action you want to be performed. Example:
 
-'''swift
+```swift
 processBeacon(items[row], distance: 0.08, frequency: 20, action: provideInfo)
-'''
+```
 
 being the method definition the following:
 
-'''swift
+```swift
 func processBeacon(_ beacon: Item, distance: Double, frequency: Int, action: (_ beacon: Item) -> ())
-'''
+```
 
 #### Audio Feedback
 

@@ -23,6 +23,7 @@
 import UIKit
 import CoreLocation
 import AVFoundation
+import MediaPlayer
 
 let storedItemsKey = "storedItems"
 
@@ -106,6 +107,11 @@ extension ItemsViewController: CLLocationManagerDelegate {
   }
   
   func locationManager(_ manager: CLLocationManager, didRangeBeacons beacons: [CLBeacon], in region: CLBeaconRegion) {
+    
+    // Testing playSong
+    //if items.count > 0 {
+    //  playSongForBeacon(items[0])
+    //}
 
     //Find the same beacons in the table.
     var indexPaths = [IndexPath]()
@@ -136,7 +142,7 @@ extension ItemsViewController: CLLocationManagerDelegate {
   // Perform interactions here //
   ///////////////////////////////
 //func processBeacon(_ beacon: Item, distance: Double, frequency: Int) {
-    func processBeacon(_ beacon: Item, distance: Double, frequency: Int, action: (_ beacon: Item) -> ()) {
+func processBeacon(_ beacon: Item, distance: Double, frequency: Int, action: (_ beacon: Item) -> ()) {
   print("processBeacon")
   if beacon.accuracy < distance {
     print(beacon.name, ": ", beacon.counter)
@@ -154,6 +160,10 @@ func provideInfo(_ beacon: Item) {
   speak("This is " + beacon.name)
 }
 
+func playSongForBeacon(_ beacon: Item) {
+  print("playSongForBeacon")
+  playSong("Produk 29")
+}
 
 func speak(_ text: String) {
   let utterance = AVSpeechUtterance(string: text)
@@ -161,6 +171,27 @@ func speak(_ text: String) {
 
   let synth = AVSpeechSynthesizer()
   synth.speak(utterance)
+}
+
+func playSong(_ songTitle: String) {
+  print("playing song " + songTitle)
+  
+  let query = MPMediaQuery.songs()
+  let isPresent = MPMediaPropertyPredicate(value: songTitle, forProperty: MPMediaItemPropertyTitle, comparisonType: .equalTo)
+  query.addFilterPredicate(isPresent)
+  
+  let result = query.collections
+  if result!.count == 0 {
+    print(songTitle + " not found")
+    return
+  }
+  
+  let controller = MPMusicPlayerController.systemMusicPlayer()
+  let item = result![0]
+  
+  controller.setQueue(with: item)
+  controller.prepareToPlay()
+  controller.play()
 }
 
 // MARK: UITableViewDataSource

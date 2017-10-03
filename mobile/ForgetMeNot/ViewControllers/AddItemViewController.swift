@@ -32,6 +32,8 @@ class AddItemViewController: UIViewController {
   @IBOutlet weak var txtUUID: UITextField!
   @IBOutlet weak var txtMajor: UITextField!
   @IBOutlet weak var txtMinor: UITextField!
+  @IBOutlet weak var txtRelationship: UITextField!
+  @IBOutlet weak var selectGender: UISegmentedControl!
   @IBOutlet weak var imgIcon: UIImageView!
 	@IBOutlet weak var btnAdd: UIButton!
  
@@ -46,7 +48,7 @@ class AddItemViewController: UIViewController {
     super.viewDidLoad()
     
     btnAdd.isEnabled = false
-    imgIcon.image = icon.image()
+//    imgIcon.image = icon.image()
   }
   
   override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -77,8 +79,10 @@ class AddItemViewController: UIViewController {
     let major = Int(txtMajor.text!) ?? 0
     let minor = Int(txtMinor.text!) ?? 0
     let name = txtName.text!.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
+    let relationship = txtRelationship.text!.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
+    let gender = selectGender.titleForSegment(at: selectGender.selectedSegmentIndex)
     
-    let newItem = Item(name: name, icon: icon.rawValue, uuid: uuid, majorValue: major, minorValue: minor)
+    let newItem = Item(name: name, icon: icon.rawValue, uuid: uuid, majorValue: major, minorValue: minor, relationship: relationship, gender: gender!)
     
     delegate?.addBeacon(item: newItem)
     dismiss(animated: true, completion: nil)
@@ -89,29 +93,29 @@ class AddItemViewController: UIViewController {
   }
 }
 
-extension AddItemViewController: UICollectionViewDelegate {
-  func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-    icon = Icons.icon(forTag: indexPath.row)
-    imgIcon.image = icon.image()
-  }
-}
+//extension AddItemViewController: UICollectionViewDelegate {
+//  func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+//    icon = Icons.icon(forTag: indexPath.row)
+//    imgIcon.image = icon.image()
+//  }
+//}
 
-extension AddItemViewController: UICollectionViewDataSource {
-  func numberOfSections(in collectionView: UICollectionView) -> Int {
-    return 1
-  }
-  
-  func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-    return allIcons.count
-  }
-  
-  func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-    let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "iconCell", for: indexPath) as! IconCell
-    cell.icon = allIcons[indexPath.row]
-    
-    return cell
-  }
-}
+//extension AddItemViewController: UICollectionViewDataSource {
+//  func numberOfSections(in collectionView: UICollectionView) -> Int {
+//    return 1
+//  }
+//  
+//  func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+//    return allIcons.count
+//  }
+//  
+//  func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+//    let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "iconCell", for: indexPath) as! IconCell
+//    cell.icon = allIcons[indexPath.row]
+//    
+//    return cell
+//  }
+//}
 
 extension AddItemViewController: UITextFieldDelegate {
   func textFieldShouldReturn(_ textField: UITextField) -> Bool {

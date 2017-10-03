@@ -30,6 +30,8 @@ struct ItemConstant {
   static let majorKey = "major"
   static let minorKey = "minor"
   static var beaconKey = "beacon"
+  static var relationshipKey = "relationship"
+  static var genderKey = "gender"
 //  static var freqKey = "freq"
   static var counterKey = "counter"
   static var accuracyKey = "accuracy"
@@ -44,18 +46,25 @@ class Item: NSObject, NSCoding {
   let minorValue: UInt16
   var beacon: CLBeacon?
   
+  let relationship: String
+  let gender: String
+  
 //  var freq: Int
   var counter: Int
   var accuracy: Double
   var proximity: CLProximity
   
-  init(name: String, icon: Int, uuid: UUID, majorValue: Int, minorValue: Int) {
+  init(name: String, icon: Int, uuid: UUID, majorValue: Int, minorValue: Int, relationship: String, gender: String) {
     self.name = name
     self.icon = icon
     self.uuid = uuid
     self.majorValue = CLBeaconMajorValue(majorValue)
     self.minorValue = CLBeaconMinorValue(minorValue)
     self.beacon = nil
+    
+    self.relationship = relationship
+    self.gender = gender
+    
     self.accuracy = 4.20
     self.proximity = .unknown
 //    self.freq = 20
@@ -73,6 +82,8 @@ class Item: NSObject, NSCoding {
     icon = aDecoder.decodeInteger(forKey: ItemConstant.iconKey)
     majorValue = UInt16(aDecoder.decodeInteger(forKey: ItemConstant.majorKey))
     minorValue = UInt16(aDecoder.decodeInteger(forKey: ItemConstant.minorKey))
+    relationship = aDecoder.decodeObject(forKey: ItemConstant.relationshipKey) as? String ?? ""
+    gender = aDecoder.decodeObject(forKey: ItemConstant.genderKey) as? String ?? ""
     beacon = nil
 //    self.freq = 10
     self.counter = 0
@@ -87,8 +98,8 @@ class Item: NSObject, NSCoding {
     aCoder.encode(Int(majorValue), forKey: ItemConstant.majorKey)
     aCoder.encode(Int(minorValue), forKey: ItemConstant.minorKey)
     aCoder.encode(beacon, forKey: ItemConstant.beaconKey)
-//    aCoder.encode(accuracy, forKey: ItemConstant.accuracyKey)
-//    aCoder.encode(proximity, forKey: ItemConstant.proximityKey)
+    aCoder.encode(relationship, forKey: ItemConstant.relationshipKey)
+    aCoder.encode(gender, forKey: ItemConstant.genderKey)
   }
   
   func asBeaconRegion() -> CLBeaconRegion {

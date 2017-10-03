@@ -27,9 +27,11 @@ import MediaPlayer
 
 let storedItemsKey = "storedItems"
 
-class ItemsViewController: UIViewController {
+class ItemsViewController: UIViewController, UIImagePickerControllerDelegate,
+  UINavigationControllerDelegate {
 	
   @IBOutlet weak var tableView: UITableView!
+  @IBOutlet weak var imagePicked: UIImageView!
   
   let locationManager = CLLocationManager()
   var items = [Item]()
@@ -157,7 +159,8 @@ func processBeacon(_ beacon: Item, distance: Double, frequency: Int, action: (_ 
 }
 
 func provideInfo(_ beacon: Item) {
-  speak("This is " + beacon.name)
+  let pronoun = ["Male": "He", "Female": "She"]
+  speak("This is \(beacon.name). \(pronoun[beacon.gender] ?? "It") is your \(beacon.relationship).")
 }
 
 func playSongForBeacon(_ beacon: Item) {
@@ -237,5 +240,5 @@ extension ItemsViewController: UITableViewDelegate {
     detailAlert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
     self.present(detailAlert, animated: true, completion: nil)
   }
-  
 }
+

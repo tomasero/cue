@@ -34,6 +34,8 @@ class AddItemViewController: UIViewController {
   @IBOutlet weak var txtMinor: UITextField!
   @IBOutlet weak var txtRelationship: UITextField!
   @IBOutlet weak var selectGender: UISegmentedControl!
+  @IBOutlet weak var btnSong: UIButton!
+  @IBOutlet weak var labelSong: UILabel!
   @IBOutlet weak var imgIcon: UIImageView!
 	@IBOutlet weak var btnAdd: UIButton!
  
@@ -70,6 +72,10 @@ class AddItemViewController: UIViewController {
     
     // Toggle btnAdd enabled based on valid user entry
     btnAdd.isEnabled = (nameValid && uuidValid)
+  }
+  
+  @IBAction func btnSong_Pressed(_ sender: UIButton) {
+    print("song button pressed");
   }
   
   @IBAction func btnAdd_Pressed(_ sender: UIButton) {

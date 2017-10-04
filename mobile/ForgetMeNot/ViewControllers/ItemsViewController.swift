@@ -110,10 +110,10 @@ extension ItemsViewController: CLLocationManagerDelegate {
   
   func locationManager(_ manager: CLLocationManager, didRangeBeacons beacons: [CLBeacon], in region: CLBeaconRegion) {
     
-    // Testing playSong
-    //if items.count > 0 {
-    //  playSongForBeacon(items[0])
-    //}
+    // TESTING functions without beacons
+//    if items.count > 0 {
+//      playSongForBeacon(items[0])
+//    }
 
     //Find the same beacons in the table.
     var indexPaths = [IndexPath]()
@@ -124,7 +124,7 @@ extension ItemsViewController: CLLocationManagerDelegate {
           items[row].beacon = beacon
           indexPaths += [IndexPath(row: row, section: 0)]
           processBeacon(items[row], distance: 0.08, frequency: 20, action: provideInfo)
-//          processBeacon(items[row], distance: 0.08, frequency: 20)
+          processBeacon(items[row], distance: 0.08, frequency: 20, action: playSongForBeacon)
         }
       }
     }
@@ -164,8 +164,8 @@ func provideInfo(_ beacon: Item) {
 }
 
 func playSongForBeacon(_ beacon: Item) {
-  print("playSongForBeacon")
-  playSong("Produk 29")
+  print("playSongForBeacon: name=\(beacon.name), songTitle=\(beacon.songTitle)")
+  playSong(beacon.songTitle)
 }
 
 func speak(_ text: String) {
@@ -185,7 +185,7 @@ func playSong(_ songTitle: String) {
   
   let result = query.collections
   if result!.count == 0 {
-    print(songTitle + " not found")
+    print("song " + songTitle + " not found")
     return
   }
   

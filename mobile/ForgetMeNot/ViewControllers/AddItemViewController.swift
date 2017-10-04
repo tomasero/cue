@@ -21,12 +21,13 @@
  */
 
 import UIKit
+import MediaPlayer
 
 protocol AddBeacon {
   func addBeacon(item: Item)
 }
 
-class AddItemViewController: UIViewController {
+class AddItemViewController: UIViewController, MPMediaPickerControllerDelegate {
 	
   @IBOutlet weak var txtName: UITextField!
   @IBOutlet weak var txtUUID: UITextField!
@@ -76,6 +77,19 @@ class AddItemViewController: UIViewController {
   
   @IBAction func btnSong_Pressed(_ sender: UIButton) {
     print("song button pressed");
+    
+    let songPicker : MPMediaPickerController = MPMediaPickerController.self(mediaTypes: MPMediaType.music)
+    songPicker.delegate = self
+    songPicker.allowsPickingMultipleItems = false
+    self.present(songPicker, animated: true, completion: nil)
+  }
+  
+  func mediaPicker(_ mediaPicker: MPMediaPickerController, didPickMediaItems mediaItemCollection: MPMediaItemCollection) {
+    self.dismiss(animated: true, completion: nil)
+    //print("Picked: \(mediaItemCollection)")
+    let songTitle = mediaItemCollection.representativeItem!.title
+    print("Picked " + songTitle!)
+    labelSong.text = songTitle
   }
   
   @IBAction func btnAdd_Pressed(_ sender: UIButton) {
@@ -87,8 +101,8 @@ class AddItemViewController: UIViewController {
     let name = txtName.text!.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
     let relationship = txtRelationship.text!.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
     let gender = selectGender.titleForSegment(at: selectGender.selectedSegmentIndex)
-    
-    let newItem = Item(name: name, icon: icon.rawValue, uuid: uuid, majorValue: major, minorValue: minor, relationship: relationship, gender: gender!)
+    let songTitle = labelSong.text!
+    let newItem = Item(name: name, icon: icon.rawValue, uuid: uuid, majorValue: major, minorValue: minor, relationship: relationship, gender: gender!, songTitle: songTitle)
     
     delegate?.addBeacon(item: newItem)
     dismiss(animated: true, completion: nil)

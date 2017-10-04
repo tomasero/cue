@@ -32,6 +32,7 @@ struct ItemConstant {
   static var beaconKey = "beacon"
   static var relationshipKey = "relationship"
   static var genderKey = "gender"
+  static var songTitleKey = "songTitle"
 //  static var freqKey = "freq"
   static var counterKey = "counter"
   static var accuracyKey = "accuracy"
@@ -48,13 +49,14 @@ class Item: NSObject, NSCoding {
   
   let relationship: String
   let gender: String
+  let songTitle: String
   
 //  var freq: Int
   var counter: Int
   var accuracy: Double
   var proximity: CLProximity
   
-  init(name: String, icon: Int, uuid: UUID, majorValue: Int, minorValue: Int, relationship: String, gender: String) {
+  init(name: String, icon: Int, uuid: UUID, majorValue: Int, minorValue: Int, relationship: String, gender: String, songTitle: String) {
     self.name = name
     self.icon = icon
     self.uuid = uuid
@@ -64,6 +66,7 @@ class Item: NSObject, NSCoding {
     
     self.relationship = relationship
     self.gender = gender
+    self.songTitle = songTitle
     
     self.accuracy = 4.20
     self.proximity = .unknown
@@ -84,6 +87,7 @@ class Item: NSObject, NSCoding {
     minorValue = UInt16(aDecoder.decodeInteger(forKey: ItemConstant.minorKey))
     relationship = aDecoder.decodeObject(forKey: ItemConstant.relationshipKey) as? String ?? ""
     gender = aDecoder.decodeObject(forKey: ItemConstant.genderKey) as? String ?? ""
+    songTitle = aDecoder.decodeObject(forKey: ItemConstant.songTitleKey) as? String ?? ""
     beacon = nil
 //    self.freq = 10
     self.counter = 0
@@ -100,6 +104,8 @@ class Item: NSObject, NSCoding {
     aCoder.encode(beacon, forKey: ItemConstant.beaconKey)
     aCoder.encode(relationship, forKey: ItemConstant.relationshipKey)
     aCoder.encode(gender, forKey: ItemConstant.genderKey)
+    aCoder.encode(songTitle, forKey: ItemConstant.songTitleKey)
+
   }
   
   func asBeaconRegion() -> CLBeaconRegion {

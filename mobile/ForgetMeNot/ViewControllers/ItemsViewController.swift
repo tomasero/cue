@@ -35,6 +35,7 @@ class ItemsViewController: UIViewController, UIImagePickerControllerDelegate,
   
   let locationManager = CLLocationManager()
   var items = [Item]()
+  var hasRunFuncTests = false
   
   override func viewDidLoad() {
     super.viewDidLoad()
@@ -111,8 +112,15 @@ extension ItemsViewController: CLLocationManagerDelegate {
   func locationManager(_ manager: CLLocationManager, didRangeBeacons beacons: [CLBeacon], in region: CLBeaconRegion) {
     
     // TESTING functions without beacons
-//    if items.count > 0 {
-//      playSongForBeacon(items[0])
+//    if (!hasRunFuncTests) {
+//      print("running func tests")
+//      if items.count > 0 {
+//        provideInfo(items[0])
+//        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(2), execute: {
+//          playSongForBeacon(self.items[0])
+//        })
+//      }
+//      hasRunFuncTests = true
 //    }
 
     //Find the same beacons in the table.
@@ -123,8 +131,10 @@ extension ItemsViewController: CLLocationManagerDelegate {
         if items[row] == beacon {
           items[row].beacon = beacon
           indexPaths += [IndexPath(row: row, section: 0)]
-          processBeacon(items[row], distance: 0.08, frequency: 20, action: provideInfo)
-          processBeacon(items[row], distance: 0.08, frequency: 20, action: playSongForBeacon)
+          processBeacon(items[row], distance: 0.08, frequency: 20, action: provideInfo) // Provide info
+          DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(2), execute: { // Play song after delay
+            processBeacon(self.items[row], distance: 0.08, frequency: 20, action: playSongForBeacon)
+          })
         }
       }
     }
@@ -165,7 +175,7 @@ func provideInfo(_ beacon: Item) {
 
 func playSongForBeacon(_ beacon: Item) {
   print("playSongForBeacon: name=\(beacon.name), songTitle=\(beacon.songTitle)")
-  playSong(beacon.songTitle)
+  playSong(beacon.songTitle, 10)
 }
 
 func speak(_ text: String) {
@@ -176,9 +186,10 @@ func speak(_ text: String) {
   synth.speak(utterance)
 }
 
-func playSong(_ songTitle: String) {
+func playSong(_ songTitle: String, _ duration: Int) {
   print("playing song " + songTitle)
   
+  // Find song in media library
   let query = MPMediaQuery.songs()
   let isPresent = MPMediaPropertyPredicate(value: songTitle, forProperty: MPMediaItemPropertyTitle, comparisonType: .equalTo)
   query.addFilterPredicate(isPresent)
@@ -189,12 +200,19 @@ func playSong(_ songTitle: String) {
     return
   }
   
-  let controller = MPMusicPlayerController.systemMusicPlayer()
+  // Set up music player
+  let controller = MPMusicPlayerController.applicationMusicPlayer()
   let item = result![0]
   
+  // Play song
   controller.setQueue(with: item)
   controller.prepareToPlay()
   controller.play()
+  
+  // Stop song after delay
+  DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(duration), execute: {
+    controller.stop()
+  })
 }
 
 // MARK: UITableViewDataSource

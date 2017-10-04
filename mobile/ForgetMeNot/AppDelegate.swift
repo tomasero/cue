@@ -44,15 +44,15 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 extension AppDelegate: CLLocationManagerDelegate {
   
   func locationManager(_ manager: CLLocationManager, didExitRegion region: CLRegion) {
-    guard region is CLBeaconRegion else { return }
-    
-    let content = UNMutableNotificationContent()
-    content.title = "Forget Me Not"
-    content.body = "Are you forgetting something?"
-    content.sound = .default()
-    
-    let request = UNNotificationRequest(identifier: "ForgetMeNot", content: content, trigger: nil)
-    UNUserNotificationCenter.current().add(request, withCompletionHandler: nil)
+//    guard region is CLBeaconRegion else { return }
+//    
+//    let content = UNMutableNotificationContent()
+//    content.title = "Forget Me Not"
+//    content.body = "Are you forgetting something?"
+//    content.sound = .default()
+//    
+//    let request = UNNotificationRequest(identifier: "ForgetMeNot", content: content, trigger: nil)
+//    UNUserNotificationCenter.current().add(request, withCompletionHandler: nil)
   }
   
   

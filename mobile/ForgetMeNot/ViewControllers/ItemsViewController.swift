@@ -201,7 +201,7 @@ func playSong(_ songTitle: String, _ duration: Int) {
   }
   
   // Set up music player
-  let controller = MPMusicPlayerController.applicationMusicPlayer()
+  let controller = MPMusicPlayerController.applicationMusicPlayer
   let item = result![0]
   
   // Play song

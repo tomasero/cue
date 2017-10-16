@@ -102,7 +102,8 @@ class AddItemViewController: UIViewController, MPMediaPickerControllerDelegate {
     let relationship = txtRelationship.text!.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
     let gender = selectGender.titleForSegment(at: selectGender.selectedSegmentIndex)
     let songTitle = labelSong.text!
-    let newItem = Item(name: name, icon: icon.rawValue, uuid: uuid, majorValue: major, minorValue: minor, relationship: relationship, gender: gender!, songTitle: songTitle)
+//    let newItem = Item(name: name, icon: icon.rawValue, uuid: uuid, majorValue: major, minorValue: minor, relationship: relationship, gender: gender!, songTitle: songTitle)
+    let newItem = Item(name: name, uuid: uuid, majorValue: major, minorValue: minor, relationship: relationship, gender: gender!, songTitle: songTitle)
     
     delegate?.addBeacon(item: newItem)
     dismiss(animated: true, completion: nil)

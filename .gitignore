@@ -10,6 +10,13 @@ unity/MementoBook_Unity5/[Bb]uild/
 unity/MementoBook_Unity5/[Bb]uilds/
 unity/MementoBook_Unity5/Assets/AssetStoreTools*
 
+unity/reFocus/[Ll]ibrary/
+unity/reFocus/[Tt]emp/
+unity/reFocus/[Oo]bj/
+unity/reFocus/[Bb]uild/
+unity/reFocus/[Bb]uilds/
+unity/reFocus/Assets/AssetStoreTools*
+
 # Visual Studio 2015 cache directory
 unity/MementoBook_Unity5/.vs/
 

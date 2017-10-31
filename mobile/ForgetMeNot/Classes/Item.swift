@@ -25,7 +25,7 @@ import CoreLocation
 
 struct ItemConstant {
   static let nameKey = "name"
-  static let iconKey = "icon"
+//  static let iconKey = "icon"
   static let uuidKey = "uuid"
   static let majorKey = "major"
   static let minorKey = "minor"
@@ -41,7 +41,7 @@ struct ItemConstant {
 
 class Item: NSObject, NSCoding {
   let name: String
-  let icon: Int
+//  let icon: Int
   let uuid: UUID
   let majorValue: UInt16
   let minorValue: UInt16
@@ -55,10 +55,11 @@ class Item: NSObject, NSCoding {
   var counter: Int
   var accuracy: Double
   var proximity: CLProximity
-  
-  init(name: String, icon: Int, uuid: UUID, majorValue: Int, minorValue: Int, relationship: String, gender: String, songTitle: String) {
+
+//  init(name: String, icon: Int, uuid: UUID, majorValue: Int, minorValue: Int, relationship: String, gender: String, songTitle: String) {
+  init(name: String, uuid: UUID, majorValue: Int, minorValue: Int, relationship: String, gender: String, songTitle: String) {
     self.name = name
-    self.icon = icon
+//    self.icon = icon
     self.uuid = uuid
     self.majorValue = CLBeaconMajorValue(majorValue)
     self.minorValue = CLBeaconMinorValue(minorValue)
@@ -82,7 +83,7 @@ class Item: NSObject, NSCoding {
     let aUUID = aDecoder.decodeObject(forKey: ItemConstant.uuidKey) as? UUID
     uuid = aUUID ?? UUID()
     
-    icon = aDecoder.decodeInteger(forKey: ItemConstant.iconKey)
+//    icon = aDecoder.decodeInteger(forKey: ItemConstant.iconKey)
     majorValue = UInt16(aDecoder.decodeInteger(forKey: ItemConstant.majorKey))
     minorValue = UInt16(aDecoder.decodeInteger(forKey: ItemConstant.minorKey))
     relationship = aDecoder.decodeObject(forKey: ItemConstant.relationshipKey) as? String ?? ""
@@ -97,7 +98,7 @@ class Item: NSObject, NSCoding {
   
   func encode(with aCoder: NSCoder) {
     aCoder.encode(name, forKey: ItemConstant.nameKey)
-    aCoder.encode(icon, forKey: ItemConstant.iconKey)
+//    aCoder.encode(icon, forKey: ItemConstant.iconKey)
     aCoder.encode(uuid, forKey: ItemConstant.uuidKey)
     aCoder.encode(Int(majorValue), forKey: ItemConstant.majorKey)
     aCoder.encode(Int(minorValue), forKey: ItemConstant.minorKey)
@@ -129,7 +130,6 @@ class Item: NSObject, NSCoding {
   }
   
   func locationString() -> String {
-    print("hola")
     guard let beacon = beacon else { return "Location: Unknown" }
     let proximity = nameForProximity(beacon.proximity)
     let accuracy = String(format: "%.2f", beacon.accuracy)

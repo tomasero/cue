@@ -36,10 +36,16 @@ class ItemsViewController: UIViewController, UIImagePickerControllerDelegate,
   let locationManager = CLLocationManager()
   var items = [Item]()
   var hasRunFuncTests = false
+  var musicMode = false
+  var speaking = false
+  var playing = false
+  var songName = ""
+  var currBeacon: Item?
+  let synth = AVSpeechSynthesizer()
   
   override func viewDidLoad() {
     super.viewDidLoad()
-    
+    synth.delegate = self
     locationManager.requestAlwaysAuthorization()
     locationManager.delegate = self
     
@@ -131,10 +137,8 @@ extension ItemsViewController: CLLocationManagerDelegate {
         if items[row] == beacon {
           items[row].beacon = beacon
           indexPaths += [IndexPath(row: row, section: 0)]
-          processBeacon(items[row], distance: 0.08, frequency: 20, action: provideInfo) // Provide info
-          DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(2), execute: { // Play song after delay
-            processBeacon(self.items[row], distance: 0.08, frequency: 20, action: playSongForBeacon)
-          })
+          processBeacon(items[row], distance: 0.08, frequency: 20, action: provideInfo, taskNumber: 0) // Provide info
+          activateMusicMode(items[row])
         }
       }
     }
@@ -149,70 +153,98 @@ extension ItemsViewController: CLLocationManagerDelegate {
     }
   }
 }
+
+extension ItemsViewController: AVSpeechSynthesizerDelegate {
+  func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
+    self.speaking = false
+    if !musicMode { return }
+    print("finished")
+    print(currBeacon!.name)
+    if let currBeacon = currBeacon {
+      print("inside")
+      processBeacon(currBeacon, distance: 0.08, frequency: 20, action: playSongForBeacon, taskNumber: 1)
+    }
+  }
+  
+  func activateMusicMode(_ beacon: Item) {
+    print("activate music mode")
+    musicMode = true
+    currBeacon = beacon
+  }
+  
+  func speak(_ text: String) {
+    speaking = true
+    let utterance = AVSpeechUtterance(string: text)
+    utterance.voice = AVSpeechSynthesisVoice(language: "en-GB")
+    synth.speak(utterance)
+  }
+  
+  func provideInfo(_ beacon: Item) {
+    print("Provide Info")
+    let pronoun = ["Male": "He", "Female": "She"]
+    speak("This is \(beacon.name). \(pronoun[beacon.gender] ?? "It") is your \(beacon.relationship).")
+  }
+  
   
   ///////////////////////////////
   // Perform interactions here //
   ///////////////////////////////
-//func processBeacon(_ beacon: Item, distance: Double, frequency: Int) {
-func processBeacon(_ beacon: Item, distance: Double, frequency: Int, action: (_ beacon: Item) -> ()) {
-  print("processBeacon")
-  if beacon.accuracy < distance {
-    print(beacon.name, ": ", beacon.counter)
-    if beacon.proximity != .unknown && beacon.counter == 0 {
-  //        Here
-      action(beacon)
+  //func processBeacon(_ beacon: Item, distance: Double, frequency: Int) {
+  func processBeacon(_ beacon: Item, distance: Double, frequency: Int, action: (_ beacon: Item) -> (), taskNumber: Int) {
+    print("processBeacon")
+    print(taskNumber)
+    if speaking || playing {
+      return
     }
-    beacon.counter = (beacon.counter + 1) % frequency
-  } else {
-    beacon.counter = 0
-  }
-}
-
-func provideInfo(_ beacon: Item) {
-  let pronoun = ["Male": "He", "Female": "She"]
-  speak("This is \(beacon.name). \(pronoun[beacon.gender] ?? "It") is your \(beacon.relationship).")
-}
-
-func playSongForBeacon(_ beacon: Item) {
-  print("playSongForBeacon: name=\(beacon.name), songTitle=\(beacon.songTitle)")
-  playSong(beacon.songTitle, 10)
-}
-
-func speak(_ text: String) {
-  let utterance = AVSpeechUtterance(string: text)
-  utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
-
-  let synth = AVSpeechSynthesizer()
-  synth.speak(utterance)
-}
-
-func playSong(_ songTitle: String, _ duration: Int) {
-  print("playing song " + songTitle)
-  
-  // Find song in media library
-  let query = MPMediaQuery.songs()
-  let isPresent = MPMediaPropertyPredicate(value: songTitle, forProperty: MPMediaItemPropertyTitle, comparisonType: .equalTo)
-  query.addFilterPredicate(isPresent)
-  
-  let result = query.collections
-  if result!.count == 0 {
-    print("song " + songTitle + " not found")
-    return
+    print("---------")
+    if beacon.accuracy < distance {
+      print(beacon.name, ": ", beacon.counter)
+      if beacon.proximity != .unknown && beacon.counter == taskNumber {
+        print("taskNumber: \(taskNumber)")
+        action(beacon)
+      }
+      beacon.counter = (beacon.counter + 1) % frequency
+    } else {
+      beacon.counter = 0
+    }
   }
   
-  // Set up music player
-  let controller = MPMusicPlayerController.applicationMusicPlayer
-  let item = result![0]
+  func playSong(_ songTitle: String, _ duration: Int) {
+    print("playing song " + songTitle)
+    playing = true
+    
+    // Find song in media library
+    let query = MPMediaQuery.songs()
+    let isPresent = MPMediaPropertyPredicate(value: songTitle, forProperty: MPMediaItemPropertyTitle, comparisonType: .equalTo)
+    query.addFilterPredicate(isPresent)
+    
+    let result = query.collections
+    if result!.count == 0 {
+      print("song " + songTitle + " not found")
+      return
+    }
+    
+    // Set up music player
+    let controller = MPMusicPlayerController.applicationMusicPlayer
+    let item = result![0]
+    
+    // Play song
+    controller.setQueue(with: item)
+    controller.prepareToPlay()
+    controller.play()
+    
+    // Stop song after delay
+    DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(duration), execute: {
+      controller.stop()
+    })
+  }
   
-  // Play song
-  controller.setQueue(with: item)
-  controller.prepareToPlay()
-  controller.play()
+  func playSongForBeacon(_ beacon: Item) {
+    print("playSongForBeacon: name=\(beacon.name), songTitle=\(beacon.songTitle)")
+    playSong(beacon.songTitle, 10)
+    playing = false
+  }
   
-  // Stop song after delay
-  DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(duration), execute: {
-    controller.stop()
-  })
 }
 
 // MARK: UITableViewDataSource

@@ -32,6 +32,8 @@
 	<string>reCog needs to know who is nearby</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>reCog needs to know who is nearby</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>reCap needs to access the microphone to record your recapitulation</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

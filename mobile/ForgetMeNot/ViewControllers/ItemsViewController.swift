@@ -28,10 +28,11 @@ import MediaPlayer
 let storedItemsKey = "storedItems"
 
 class ItemsViewController: UIViewController, UIImagePickerControllerDelegate,
-  UINavigationControllerDelegate {
+  UINavigationControllerDelegate, AVAudioRecorderDelegate {
 	
   @IBOutlet weak var tableView: UITableView!
   @IBOutlet weak var imagePicked: UIImageView!
+  // @IBOutlet weak var btnAudioRecord: UIButton!
   
   let locationManager = CLLocationManager()
   var items = [Item]()
@@ -43,6 +44,10 @@ class ItemsViewController: UIViewController, UIImagePickerControllerDelegate,
   var currBeacon: Item?
   let synth = AVSpeechSynthesizer()
   
+  var recordingSession : AVAudioSession!
+  var audioRecorder    :AVAudioRecorder!
+  var audioRecorderSettings = [String : Int]()
+  
   override func viewDidLoad() {
     super.viewDidLoad()
     synth.delegate = self
@@ -50,6 +55,32 @@ class ItemsViewController: UIViewController, UIImagePickerControllerDelegate,
     locationManager.delegate = self
     
     loadItems()
+    
+    // Audio recording session
+    recordingSession = AVAudioSession.sharedInstance()
+    do {
+      try recordingSession.setCategory(AVAudioSessionCategoryPlayAndRecord)
+      try recordingSession.setActive(true)
+      recordingSession.requestRecordPermission() { [unowned self] allowed in
+        DispatchQueue.main.async {
+          if allowed {
+            print("Allow")
+          } else {
+            print("Dont Allow")
+          }
+        }
+      }
+    } catch {
+      print("failed to record!")
+    }
+    
+    // Audio Settings
+    audioRecorderSettings = [
+      AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
+      AVSampleRateKey: 12000,
+      AVNumberOfChannelsKey: 1,
+      AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
+    ]
   }
   
   func loadItems() {
@@ -123,7 +154,8 @@ extension ItemsViewController: CLLocationManagerDelegate {
       if items.count > 0 {
         provideInfo(items[0])
         DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(2), execute: {
-          self.playSongForBeacon(self.items[0])
+          //self.playSongForBeacon(self.items[0])
+          self.startRecordingForBeacon(self.items[0])
         })
       }
       hasRunFuncTests = true
@@ -243,6 +275,64 @@ extension ItemsViewController: AVSpeechSynthesizerDelegate {
     print("playSongForBeacon: name=\(beacon.name), songTitle=\(beacon.songTitle)")
     playSong(beacon.songTitle, 10)
     playing = false
+  }
+  
+  // Audio recording stuff
+  
+  func startRecordingForBeacon(_ beacon: Item) {
+    print("startRecordingForBeacon: name=\(beacon.name)")
+    
+    if audioRecorder == nil {
+      //self.btnAudioRecord.setTitle("Stop", for: UIControlState.normal)
+      //self.btnAudioRecord.backgroundColor = UIColor(red: 119.0/255.0, green: 119.0/255.0, blue: 119.0/255.0, alpha: 1.0)
+      self.startRecording(beacon.name)
+    } else {
+      //self.btnAudioRecord.setTitle("Record", for: UIControlState.normal)
+      //self.btnAudioRecord.backgroundColor = UIColor(red: 221.0/255.0, green: 27.0/255.0, blue: 50.0/255.0, alpha: 1.0)
+      self.finishRecording(success: true)
+    }
+  }
+  
+  func audioDirectoryURL(_ prefix: String) -> NSURL? {
+    let fileManager = FileManager.default
+    let urls = fileManager.urls(for: .documentDirectory, in: .userDomainMask)
+    let documentDirectory = urls[0] as NSURL
+    let soundURL = documentDirectory.appendingPathComponent("\(prefix)_sound.m4a")
+    print(soundURL!)
+    return soundURL as NSURL?
+  }
+  
+  func startRecording(_ name: String) {
+    let audioSession = AVAudioSession.sharedInstance()
+    do {
+      audioRecorder = try AVAudioRecorder(url: self.audioDirectoryURL(name)! as URL,
+                                          settings: audioRecorderSettings)
+      audioRecorder.delegate = self
+      audioRecorder.prepareToRecord()
+    } catch {
+      finishRecording(success: false)
+    }
+    do {
+      try audioSession.setActive(true)
+      audioRecorder.record()
+    } catch {
+    }
+  }
+  
+  func finishRecording(success: Bool) {
+    audioRecorder.stop()
+    if success {
+      print(success)
+    } else {
+      audioRecorder = nil
+      print("Somthing Wrong.")
+    }
+  }
+  
+  func audioRecorderDidFinishRecording(_ recorder: AVAudioRecorder, successfully flag: Bool) {
+    if !flag {
+      finishRecording(success: false)
+    }
   }
   
 }

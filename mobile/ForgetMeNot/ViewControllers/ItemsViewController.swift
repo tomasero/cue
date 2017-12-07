@@ -28,7 +28,7 @@ import MediaPlayer
 let storedItemsKey = "storedItems"
 
 class ItemsViewController: UIViewController, UIImagePickerControllerDelegate,
-  UINavigationControllerDelegate, AVAudioRecorderDelegate {
+  UINavigationControllerDelegate, AVAudioRecorderDelegate, AVAudioPlayerDelegate {
 	
   @IBOutlet weak var tableView: UITableView!
   @IBOutlet weak var imagePicked: UIImageView!
@@ -47,6 +47,8 @@ class ItemsViewController: UIViewController, UIImagePickerControllerDelegate,
   var recordingSession : AVAudioSession!
   var audioRecorder    :AVAudioRecorder!
   var audioRecorderSettings = [String : Int]()
+  var audioPlayer : AVAudioPlayer!
+  var audioURLs = [String: URL]()
   
   override func viewDidLoad() {
     super.viewDidLoad()
@@ -152,10 +154,27 @@ extension ItemsViewController: CLLocationManagerDelegate {
     if (!hasRunFuncTests) {
       print("running func tests")
       if items.count > 0 {
+        // Speak
         provideInfo(items[0])
+        
+        // Play song
+        //DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(2), execute: {
+        //  self.playSongForBeacon(self.items[0])
+        //})
+        
+        // Start recording
         DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(2), execute: {
-          //self.playSongForBeacon(self.items[0])
-          self.startRecordingForBeacon(self.items[0])
+          self.startRecordingAudioForBeacon(self.items[0])
+        })
+        
+        // Finish recording
+        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(5), execute: {
+          self.finishRecording(success: true)
+        })
+        
+        // Play back recording
+        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(8), execute: {
+          self.startPlayingAudioForBeacon(self.items[0])
         })
       }
       hasRunFuncTests = true
@@ -279,8 +298,8 @@ extension ItemsViewController: AVSpeechSynthesizerDelegate {
   
   // Audio recording stuff
   
-  func startRecordingForBeacon(_ beacon: Item) {
-    print("startRecordingForBeacon: name=\(beacon.name)")
+  func startRecordingAudioForBeacon(_ beacon: Item) {
+    print("startRecordingAudioForBeacon: name=\(beacon.name)")
     
     if audioRecorder == nil {
       //self.btnAudioRecord.setTitle("Stop", for: UIControlState.normal)
@@ -305,10 +324,14 @@ extension ItemsViewController: AVSpeechSynthesizerDelegate {
   func startRecording(_ name: String) {
     let audioSession = AVAudioSession.sharedInstance()
     do {
-      audioRecorder = try AVAudioRecorder(url: self.audioDirectoryURL(name)! as URL,
+      let url = self.audioDirectoryURL(name)! as URL
+      audioRecorder = try AVAudioRecorder(url: url,
                                           settings: audioRecorderSettings)
       audioRecorder.delegate = self
       audioRecorder.prepareToRecord()
+      
+      audioURLs[name] = url
+      print("url = \(url)")
     } catch {
       finishRecording(success: false)
     }
@@ -327,12 +350,45 @@ extension ItemsViewController: AVSpeechSynthesizerDelegate {
       audioRecorder = nil
       print("Somthing Wrong.")
     }
+    
+    //audioRecorder = nil
   }
   
   func audioRecorderDidFinishRecording(_ recorder: AVAudioRecorder, successfully flag: Bool) {
     if !flag {
       finishRecording(success: false)
     }
+  }
+  
+  // Audio playback
+  
+  func startPlayingAudioForBeacon(_ beacon : Item) {
+    if !audioRecorder.isRecording {
+      let name = beacon.name
+      print("startPlayingAudioForBeacon: name=\(name)")
+      
+      self.audioPlayer = try! AVAudioPlayer(contentsOf: audioRecorder.url)
+      print(audioRecorder.url)
+      //self.audioPlayer = try! AVAudioPlayer(contentsOf: audioURLs[name]!)
+      self.audioPlayer.prepareToPlay()
+      self.audioPlayer.delegate = self
+      self.audioPlayer.play()
+    }
+  }
+  
+  func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+    print(flag)
+  }
+  func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: Error?){
+    print(error.debugDescription)
+  }
+  internal func audioPlayerBeginInterruption(_ player: AVAudioPlayer){
+    print(player.debugDescription)
+  }
+  
+  override func didReceiveMemoryWarning() {
+    super.didReceiveMemoryWarning()
+    // Dispose of any resources that can be recreated.
   }
   
 }

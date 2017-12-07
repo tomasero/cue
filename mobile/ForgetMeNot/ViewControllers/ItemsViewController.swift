@@ -118,16 +118,16 @@ extension ItemsViewController: CLLocationManagerDelegate {
   func locationManager(_ manager: CLLocationManager, didRangeBeacons beacons: [CLBeacon], in region: CLBeaconRegion) {
     
     // TESTING functions without beacons
-//    if (!hasRunFuncTests) {
-//      print("running func tests")
-//      if items.count > 0 {
-//        provideInfo(items[0])
-//        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(2), execute: {
-//          playSongForBeacon(self.items[0])
-//        })
-//      }
-//      hasRunFuncTests = true
-//    }
+    if (!hasRunFuncTests) {
+      print("running func tests")
+      if items.count > 0 {
+        provideInfo(items[0])
+        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(2), execute: {
+          self.playSongForBeacon(self.items[0])
+        })
+      }
+      hasRunFuncTests = true
+    }
 
     //Find the same beacons in the table.
     var indexPaths = [IndexPath]()
@@ -225,7 +225,7 @@ extension ItemsViewController: AVSpeechSynthesizerDelegate {
     }
     
     // Set up music player
-    let controller = MPMusicPlayerController.applicationMusicPlayer
+    let controller = MPMusicPlayerController.applicationMusicPlayer()
     let item = result![0]
     
     // Play song

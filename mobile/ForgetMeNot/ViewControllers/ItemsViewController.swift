@@ -48,8 +48,10 @@ class ItemsViewController: UIViewController, UIImagePickerControllerDelegate,
   var audioRecorder    :AVAudioRecorder!
   var audioRecorderSettings = [String : Int]()
   var audioPlayer : AVAudioPlayer!
-  var audioURLs = [String: URL]()
+  var audioURLs = [UUID: URL]()
   let audioPlaybackOffset : TimeInterval = 5 // How many seconds before the end of the recording we want to start playback
+  var isRecording = false
+  var proximityStatuses = [UUID: Bool]()
   
   override func viewDidLoad() {
     super.viewDidLoad()
@@ -150,6 +152,7 @@ extension ItemsViewController: CLLocationManagerDelegate {
   }
   
   func locationManager(_ manager: CLLocationManager, didRangeBeacons beacons: [CLBeacon], in region: CLBeaconRegion) {
+    // (^ This gets called a a consistent interval)
     
     // TESTING functions without beacons
     if (!hasRunFuncTests) {
@@ -305,33 +308,43 @@ extension ItemsViewController: AVSpeechSynthesizerDelegate {
     if audioRecorder == nil {
       //self.btnAudioRecord.setTitle("Stop", for: UIControlState.normal)
       //self.btnAudioRecord.backgroundColor = UIColor(red: 119.0/255.0, green: 119.0/255.0, blue: 119.0/255.0, alpha: 1.0)
-      self.startRecording(beacon.name)
+      self.startRecording(beacon.uuid)
     } else {
+      // Do nothing
       //self.btnAudioRecord.setTitle("Record", for: UIControlState.normal)
       //self.btnAudioRecord.backgroundColor = UIColor(red: 221.0/255.0, green: 27.0/255.0, blue: 50.0/255.0, alpha: 1.0)
-      self.finishRecording(success: true)
+      //self.finishRecording(success: true)
     }
+    
+    self.isRecording = true
   }
   
-  func audioDirectoryURL(_ prefix: String) -> NSURL? {
+  func stopRecordingAudioForBeacon(_ beacon: Item) {
+    finishRecording(success: true)
+    audioRecorder = nil
+    self.isRecording = false
+  }
+  
+  func audioDirectoryURL(_ uuid: UUID) -> NSURL? {
+    let uuidString = uuid.uuidString
     let fileManager = FileManager.default
     let urls = fileManager.urls(for: .documentDirectory, in: .userDomainMask)
     let documentDirectory = urls[0] as NSURL
-    let soundURL = documentDirectory.appendingPathComponent("\(prefix)_sound.m4a")
+    let soundURL = documentDirectory.appendingPathComponent("sound_\(uuidString).m4a")
     print(soundURL!)
     return soundURL as NSURL?
   }
   
-  func startRecording(_ name: String) {
+  func startRecording(_ uuid: UUID) {
     let audioSession = AVAudioSession.sharedInstance()
     do {
-      let url = self.audioDirectoryURL(name)! as URL
+      let url = self.audioDirectoryURL(uuid)! as URL
       audioRecorder = try AVAudioRecorder(url: url,
                                           settings: audioRecorderSettings)
       audioRecorder.delegate = self
       audioRecorder.prepareToRecord()
       
-      audioURLs[name] = url
+      audioURLs[uuid] = url
       print("url = \(url)")
     } catch {
       finishRecording(success: false)
@@ -351,8 +364,6 @@ extension ItemsViewController: AVSpeechSynthesizerDelegate {
       audioRecorder = nil
       print("Somthing Wrong.")
     }
-    
-    audioRecorder = nil
   }
   
   func audioRecorderDidFinishRecording(_ recorder: AVAudioRecorder, successfully flag: Bool) {
@@ -365,14 +376,13 @@ extension ItemsViewController: AVSpeechSynthesizerDelegate {
   
   func startPlayingAudioForBeacon(_ beacon : Item) {
     if audioRecorder == nil || !audioRecorder.isRecording {
-      let name = beacon.name
-      print("startPlayingAudioForBeacon: name=\(name)")
+      print("startPlayingAudioForBeacon: name=\(beacon.name)")
       
       //self.audioPlayer = try! AVAudioPlayer(contentsOf: audioRecorder.url)
       //print(audioRecorder.url)
       
-      self.audioPlayer = try! AVAudioPlayer(contentsOf: audioURLs[name]!)
-      print(audioURLs[name]!)
+      self.audioPlayer = try! AVAudioPlayer(contentsOf: audioURLs[beacon.uuid]!)
+      print(audioURLs[beacon.uuid]!)
       
       self.audioPlayer.prepareToPlay()
       self.audioPlayer.delegate = self

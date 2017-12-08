@@ -352,7 +352,7 @@ extension ItemsViewController: AVSpeechSynthesizerDelegate {
       print("Somthing Wrong.")
     }
     
-    //audioRecorder = nil
+    audioRecorder = nil
   }
   
   func audioRecorderDidFinishRecording(_ recorder: AVAudioRecorder, successfully flag: Bool) {
@@ -364,13 +364,16 @@ extension ItemsViewController: AVSpeechSynthesizerDelegate {
   // Audio playback
   
   func startPlayingAudioForBeacon(_ beacon : Item) {
-    if !audioRecorder.isRecording {
+    if audioRecorder == nil || !audioRecorder.isRecording {
       let name = beacon.name
       print("startPlayingAudioForBeacon: name=\(name)")
       
-      self.audioPlayer = try! AVAudioPlayer(contentsOf: audioRecorder.url)
-      print(audioRecorder.url)
-      //self.audioPlayer = try! AVAudioPlayer(contentsOf: audioURLs[name]!)
+      //self.audioPlayer = try! AVAudioPlayer(contentsOf: audioRecorder.url)
+      //print(audioRecorder.url)
+      
+      self.audioPlayer = try! AVAudioPlayer(contentsOf: audioURLs[name]!)
+      print(audioURLs[name]!)
+      
       self.audioPlayer.prepareToPlay()
       self.audioPlayer.delegate = self
       print("old currentTime=\(self.audioPlayer.currentTime)")

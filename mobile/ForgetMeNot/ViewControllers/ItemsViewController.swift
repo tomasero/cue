@@ -33,6 +33,9 @@ class ItemsViewController: UIViewController, UIImagePickerControllerDelegate,
   @IBOutlet weak var tableView: UITableView!
   @IBOutlet weak var imagePicked: UIImageView!
   // @IBOutlet weak var btnAudioRecord: UIButton!
+
+  let dist = 0.08
+  let freq = 20
   
   let locationManager = CLLocationManager()
   var items = [Item]()
@@ -53,7 +56,11 @@ class ItemsViewController: UIViewController, UIImagePickerControllerDelegate,
   var audioURLs = [UUID: URL]()
   var isRecording = false
   var proximityStatuses = [UUID: Bool]()
-  var hasFinishedPlaying = false
+  var hasFinishedPlaying = true
+    
+  // Reset proximity statuses
+  var prevProximityStatuses = [UUID: Bool]()
+  var prevStatus = false
   
   override func viewDidLoad() {
     super.viewDidLoad()
@@ -157,41 +164,39 @@ extension ItemsViewController: CLLocationManagerDelegate {
     // (^ This gets called a a consistent interval)
     
     // TESTING functions without beacons
-    if (!hasRunFuncTests) {
-      print("running func tests")
-      if items.count > 0 {
-        // Speak
-        provideInfo(items[0])
-        
-        // Play song
-        //DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(2), execute: {
-        //  self.playSongForBeacon(self.items[0])
-        //})
-        
-        // Start recording
-        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(2), execute: {
-          self.startRecordingAudioForBeacon(self.items[0])
-        })
-        
-        // Finish recording
-        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(12), execute: {
-          self.finishRecording(success: true)
-        })
-        
-        // Play back recording
-        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(14), execute: {
-          self.startPlayingAudioForBeacon(self.items[0])
-        })
-      }
-      hasRunFuncTests = true
-    }
+//    if (!hasRunFuncTests) {
+//      print("running func tests")
+//      if items.count > 0 {
+//        // Speak
+//        provideInfo(items[0])
+//
+//        // Play song
+//        //DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(2), execute: {
+//        //  self.playSongForBeacon(self.items[0])
+//        //})
+//
+//        // Start recording
+//        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(2), execute: {
+//          self.startRecordingAudioForBeacon(self.items[0])
+//        })
+//
+//        // Finish recording
+//        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(12), execute: {
+//          self.finishRecording(success: true)
+//        })
+//
+//        // Play back recording
+//        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(14), execute: {
+//          self.startPlayingAudioForBeacon(self.items[0])
+//        })
+//      }
+//      hasRunFuncTests = true
+//    }
     
-    // Reset proximity statuses
-    var prevProximityStatuses = [UUID: Bool]()
     
     for (uuid, status) in proximityStatuses {
       prevProximityStatuses[uuid] = status
-      proximityStatuses[uuid] = false
+//      proximityStatuses[uuid] = false
     }
 
     //Find the same beacons in the table.
@@ -202,16 +207,8 @@ extension ItemsViewController: CLLocationManagerDelegate {
         if items[row] == beacon {
           items[row].beacon = beacon
           indexPaths += [IndexPath(row: row, section: 0)]
-          processBeacon(items[row], distance: 0.08, frequency: 20, action: provideInfo, taskNumber: 0) // Provide info
+          processBeacon(items[row], distance: dist, frequency: freq, action: provideInfo, taskNumber: 0) // Provide info
           activateMusicMode(items[row])
-          
-          let uuid = items[row].uuid
-          proximityStatuses[uuid] = true
-          
-          // Disable recording if need be
-          if prevProximityStatuses[uuid] == true && proximityStatuses[uuid] == false {
-            // TODO: STOP RECORDING
-          }
         }
       }
     }
@@ -235,15 +232,16 @@ extension ItemsViewController: AVSpeechSynthesizerDelegate {
     print(currBeacon!.name)
     if let currBeacon = currBeacon {
       print("inside")
-      let dist = 0.08
-      let freq = 20
+
       
       if doRecordAudioInsteadOfMusic {
+        print("doRecordAudioInsteadOfMusic")
         if (!hasFinishedPlaying) { // Play previous recording...
-          processBeacon(currBeacon, distance: dist, frequency: freq, action: startPlayingAudioForBeacon, taskNumber: 1)
-        }
-        else { // ... then start recording new one
-          processBeacon(currBeacon, distance: dist, frequency: freq, action: startRecordingAudioForBeacon, taskNumber: 2)
+            print("!hasFinishedPlaying")
+            processBeacon(currBeacon, distance: dist, frequency: freq, action: startPlayingAudioForBeacon, taskNumber: 1)
+        } else { // ... then start recording new one
+            print("hasFinishedPlaying")
+            processBeacon(currBeacon, distance: dist, frequency: freq, action: startRecordingAudioForBeacon, taskNumber: 9)
         }
       }
       else {
@@ -253,7 +251,6 @@ extension ItemsViewController: AVSpeechSynthesizerDelegate {
   }
   
   func activateMusicMode(_ beacon: Item) {
-    print("activate music mode")
     musicMode = true
     currBeacon = beacon
   }
@@ -268,7 +265,10 @@ extension ItemsViewController: AVSpeechSynthesizerDelegate {
   func provideInfo(_ beacon: Item) {
     print("Provide Info")
     let pronoun = ["Male": "He", "Female": "She"]
-    speak("This is \(beacon.name). \(pronoun[beacon.gender] ?? "It") is your \(beacon.relationship).")
+    let alreadyInProximity = prevProximityStatuses[beacon.uuid]
+//    if alreadyInProximity! {
+        speak("This is \(beacon.name). \(pronoun[beacon.gender] ?? "It") is your \(beacon.relationship).")
+//    }
   }
   
   
@@ -278,19 +278,63 @@ extension ItemsViewController: AVSpeechSynthesizerDelegate {
   //func processBeacon(_ beacon: Item, distance: Double, frequency: Int) {
   func processBeacon(_ beacon: Item, distance: Double, frequency: Int, action: (_ beacon: Item) -> (), taskNumber: Int) {
     print("processBeacon")
-    print(taskNumber)
+    print("taskNumber: ", taskNumber)
     if speaking || playing {
+        print("either speaking or playing or recording")
       return
     }
     print("---------")
-    if beacon.accuracy < distance {
-      print(beacon.name, ": ", beacon.counter)
-      if beacon.proximity != .unknown && beacon.counter == taskNumber {
-        print("taskNumber: \(taskNumber)")
-        action(beacon)
-      }
-      beacon.counter = (beacon.counter + 1) % frequency
+    
+    let uuid = beacon.uuid
+    
+    
+    prevProximityStatuses[uuid] = proximityStatuses[uuid]
+    if let val = proximityStatuses[uuid] {
+        print("prevStatus not nil")
+        print(val)
+        prevStatus = val
     } else {
+        print("prevStatus is nil")
+        print("false")
+        prevStatus = false
+    }
+    
+    if beacon.accuracy < distance {
+        print("IN DISTANCE")
+        proximityStatuses[uuid] = true
+        print(beacon.name, ": ", beacon.counter)
+//        print("prox: ", beacon.proximity != .unknown)
+//        print("counter: ", beacon.counter == taskNumber)
+        
+        if isRecording {
+            print("is recording")
+//            if prevStatus == true {
+//                return
+//            }
+        }
+        
+        if beacon.proximity != .unknown  && beacon.counter == taskNumber || taskNumber == 9 {
+            print("taskNumber: \(taskNumber)")
+            action(beacon)
+        }
+        beacon.counter = (beacon.counter + 1) % frequency
+        
+//        if hasFinishedPlaying {
+//            startRecording(beacon.uuid)
+//        }
+    } else {
+        print("NOT IN DISTANCE")
+        proximityStatuses[uuid] = false
+        print(proximityStatuses[uuid]! ? "true" : "false")
+//        print("0000000000")
+        
+        // Disable recording if need be
+//        print(prevStatus)
+//        print(proximityStatuses[uuid] == false)
+        if prevStatus == true && proximityStatuses[uuid] == false {
+            print("STOP")
+            stopRecordingAudioForBeacon(beacon)
+        }
       beacon.counter = 0
     }
   }
@@ -311,7 +355,7 @@ extension ItemsViewController: AVSpeechSynthesizerDelegate {
     }
     
     // Set up music player
-    let controller = MPMusicPlayerController.applicationMusicPlayer()
+    let controller = MPMusicPlayerController.applicationMusicPlayer
     let item = result![0]
     
     // Play song
@@ -351,9 +395,14 @@ extension ItemsViewController: AVSpeechSynthesizerDelegate {
   }
   
   func stopRecordingAudioForBeacon(_ beacon: Item) {
+    if !isRecording {
+        return
+    }
     finishRecording(success: true)
     audioRecorder = nil
     self.isRecording = false
+    hasFinishedPlaying = false
+    print("HERE MOTHREFUVKCER")
   }
   
   func audioDirectoryURL(_ uuid: UUID) -> NSURL? {
@@ -388,6 +437,9 @@ extension ItemsViewController: AVSpeechSynthesizerDelegate {
   }
   
   func finishRecording(success: Bool) {
+    if audioRecorder == nil {
+        return
+    }
     audioRecorder.stop()
     if success {
       print(success)
@@ -399,6 +451,7 @@ extension ItemsViewController: AVSpeechSynthesizerDelegate {
   }
   
   func audioRecorderDidFinishRecording(_ recorder: AVAudioRecorder, successfully flag: Bool) {
+    print("yo finished recording yo")
     if !flag {
       finishRecording(success: false)
     }
@@ -412,7 +465,10 @@ extension ItemsViewController: AVSpeechSynthesizerDelegate {
       
       //self.audioPlayer = try! AVAudioPlayer(contentsOf: audioRecorder.url)
       //print(audioRecorder.url)
-      
+        if (audioURLs[beacon.uuid] == nil) {
+            hasFinishedPlaying = true
+            return
+        }
       self.audioPlayer = try! AVAudioPlayer(contentsOf: audioURLs[beacon.uuid]!)
       print(audioURLs[beacon.uuid]!)
       
@@ -436,6 +492,8 @@ extension ItemsViewController: AVSpeechSynthesizerDelegate {
     print("Finished playing")
     playing = false
     hasFinishedPlaying = true
+    
+    startRecordingAudioForBeacon(currBeacon!)
   }
   func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: Error?){
     print(error.debugDescription)

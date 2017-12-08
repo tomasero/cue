@@ -44,14 +44,16 @@ class ItemsViewController: UIViewController, UIImagePickerControllerDelegate,
   var currBeacon: Item?
   let synth = AVSpeechSynthesizer()
   
+  let doRecordAudioInsteadOfMusic = true // TODO: Do this in a better way
+  let audioPlaybackOffset : TimeInterval = 5 // How many seconds before the end of the recording we want to start playback
   var recordingSession : AVAudioSession!
   var audioRecorder    :AVAudioRecorder!
   var audioRecorderSettings = [String : Int]()
   var audioPlayer : AVAudioPlayer!
   var audioURLs = [UUID: URL]()
-  let audioPlaybackOffset : TimeInterval = 5 // How many seconds before the end of the recording we want to start playback
   var isRecording = false
   var proximityStatuses = [UUID: Bool]()
+  var hasFinishedPlaying = false
   
   override func viewDidLoad() {
     super.viewDidLoad()
@@ -183,6 +185,14 @@ extension ItemsViewController: CLLocationManagerDelegate {
       }
       hasRunFuncTests = true
     }
+    
+    // Reset proximity statuses
+    var prevProximityStatuses = [UUID: Bool]()
+    
+    for (uuid, status) in proximityStatuses {
+      prevProximityStatuses[uuid] = status
+      proximityStatuses[uuid] = false
+    }
 
     //Find the same beacons in the table.
     var indexPaths = [IndexPath]()
@@ -194,6 +204,14 @@ extension ItemsViewController: CLLocationManagerDelegate {
           indexPaths += [IndexPath(row: row, section: 0)]
           processBeacon(items[row], distance: 0.08, frequency: 20, action: provideInfo, taskNumber: 0) // Provide info
           activateMusicMode(items[row])
+          
+          let uuid = items[row].uuid
+          proximityStatuses[uuid] = true
+          
+          // Disable recording if need be
+          if prevProximityStatuses[uuid] == true && proximityStatuses[uuid] == false {
+            // TODO: STOP RECORDING
+          }
         }
       }
     }
@@ -217,7 +235,20 @@ extension ItemsViewController: AVSpeechSynthesizerDelegate {
     print(currBeacon!.name)
     if let currBeacon = currBeacon {
       print("inside")
-      processBeacon(currBeacon, distance: 0.08, frequency: 20, action: playSongForBeacon, taskNumber: 1)
+      let dist = 0.08
+      let freq = 20
+      
+      if doRecordAudioInsteadOfMusic {
+        if (!hasFinishedPlaying) { // Play previous recording...
+          processBeacon(currBeacon, distance: dist, frequency: freq, action: startPlayingAudioForBeacon, taskNumber: 1)
+        }
+        else { // ... then start recording new one
+          processBeacon(currBeacon, distance: dist, frequency: freq, action: startRecordingAudioForBeacon, taskNumber: 2)
+        }
+      }
+      else {
+        processBeacon(currBeacon, distance: dist, frequency: freq, action: playSongForBeacon, taskNumber: 1)
+      }
     }
   }
   
@@ -364,6 +395,7 @@ extension ItemsViewController: AVSpeechSynthesizerDelegate {
       audioRecorder = nil
       print("Somthing Wrong.")
     }
+    print("Finished recording")
   }
   
   func audioRecorderDidFinishRecording(_ recorder: AVAudioRecorder, successfully flag: Bool) {
@@ -384,17 +416,26 @@ extension ItemsViewController: AVSpeechSynthesizerDelegate {
       self.audioPlayer = try! AVAudioPlayer(contentsOf: audioURLs[beacon.uuid]!)
       print(audioURLs[beacon.uuid]!)
       
+      if self.audioPlayer == nil {
+        print("no audio yet for current beacon")
+        return
+      }
+      
       self.audioPlayer.prepareToPlay()
       self.audioPlayer.delegate = self
       print("old currentTime=\(self.audioPlayer.currentTime)")
       self.audioPlayer.currentTime = max(0 as TimeInterval, self.audioPlayer.duration - audioPlaybackOffset)
       print("new currentTime=\(self.audioPlayer.currentTime)")
       self.audioPlayer.play()
+      playing = true
     }
   }
   
   func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
     print(flag)
+    print("Finished playing")
+    playing = false
+    hasFinishedPlaying = true
   }
   func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: Error?){
     print(error.debugDescription)

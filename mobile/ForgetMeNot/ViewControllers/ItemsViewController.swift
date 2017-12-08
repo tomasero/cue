@@ -49,6 +49,7 @@ class ItemsViewController: UIViewController, UIImagePickerControllerDelegate,
   var audioRecorderSettings = [String : Int]()
   var audioPlayer : AVAudioPlayer!
   var audioURLs = [String: URL]()
+  let audioPlaybackOffset : TimeInterval = 5 // How many seconds before the end of the recording we want to start playback
   
   override func viewDidLoad() {
     super.viewDidLoad()
@@ -168,12 +169,12 @@ extension ItemsViewController: CLLocationManagerDelegate {
         })
         
         // Finish recording
-        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(5), execute: {
+        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(12), execute: {
           self.finishRecording(success: true)
         })
         
         // Play back recording
-        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(8), execute: {
+        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(14), execute: {
           self.startPlayingAudioForBeacon(self.items[0])
         })
       }
@@ -372,6 +373,9 @@ extension ItemsViewController: AVSpeechSynthesizerDelegate {
       //self.audioPlayer = try! AVAudioPlayer(contentsOf: audioURLs[name]!)
       self.audioPlayer.prepareToPlay()
       self.audioPlayer.delegate = self
+      print("old currentTime=\(self.audioPlayer.currentTime)")
+      self.audioPlayer.currentTime = max(0 as TimeInterval, self.audioPlayer.duration - audioPlaybackOffset)
+      print("new currentTime=\(self.audioPlayer.currentTime)")
       self.audioPlayer.play()
     }
   }
